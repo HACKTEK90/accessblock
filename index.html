@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Access Blocked – Malware Detected</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Inter',sans-serif;
+      background-color:#fef2f2;
+      color:#991b1b;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
+      text-align:center;
+      gap:1rem;
+      padding:1rem;
+    }
+    .notice{
+      max-width:600px;
+      width:100%;
+      padding:2rem;
+      background:#fff1f2;
+      border:1px solid #fecaca;
+      border-radius:12px;
+      box-shadow:0 8px 16px rgba(0,0,0,.05);
+    }
+    .icon{font-size:80px;margin-bottom:1rem;}
+    h1{font-size:2.5rem;margin-bottom:.75rem;}
+    p{font-size:1.1rem;color:#7f1d1d;}
+    .ip-box{margin-top:1.5rem;padding:.75rem 1rem;background:#fee2e2;border-radius:6px;font-family:monospace;display:inline-block;}
+    #map{width:100%;height:60vh;max-width:800px;border:1px solid #fecaca;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.05);}  
+  </style>
+</head>
+<body>
+  <section class="notice">
+    <div class="icon">☣️</div>
+    <h1>Access Blocked</h1>
+    <p>
+      Harmful malware or virus activity has been detected originating from your IP address.<br>
+      For your safety and the security of our network, access has been denied.
+    </p>
+    <div class="ip-box" id="ip">Detecting IP…</div>
+  </section>
+
+  <div id="map">Loading map…</div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const ipBox = document.getElementById('ip');
+    const mapDiv = document.getElementById('map');
+
+    /**
+     * STEP 1 – Fetch visitor IP & geolocation
+     * Uses ipinfo.io – replace YOUR_TOKEN with your free API token
+     */
+    fetch('https://ipinfo.io/json?token=a56ee20b36425b')
+      .then(res => res.json())
+      .then(data => {
+        const ip = data.ip || 'Unknown IP';
+        ipBox.textContent = 'IP Address: ' + ip;
+
+        // Extract lat & lon from "loc" (e.g., "37.3860,-122.0840")
+        const [lat, lon] = (data.loc || ',').split(',');
+        if (!lat || !lon) throw new Error('No location');
+
+        // STEP 2 – Build map
+        buildMap(parseFloat(lat), parseFloat(lon), data);
+      })
+      .catch(err => {
+        console.error('Location fetch error', err);
+        ipBox.textContent = 'Unable to retrieve IP/location.';
+        mapDiv.textContent = '';
+      });
+
+    function buildMap(lat, lon, data){
+      mapDiv.textContent=''; // clear loader text
+      const map = L.map('map').setView([lat, lon], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom:18,
+        attribution:'&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      L.marker([lat, lon]).addTo(map)
+        .bindPopup(`Your approximate location:<br>${data.city || ''}, ${data.region || ''}`)
+        .openPopup();
+    }
+  </script>
+</body>
+</html>
