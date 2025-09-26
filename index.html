@@ -1,94 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Access Blocked – Malware Detected</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    * {margin:0;padding:0;box-sizing:border-box;}
-    body{
-      font-family:'Inter',sans-serif;
-      background-color:#fef2f2;
-      color:#991b1b;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      min-height:100vh;
-      text-align:center;
-      gap:1rem;
-      padding:1rem;
-    }
-    .notice{
-      max-width:600px;
-      width:100%;
-      padding:2rem;
-      background:#fff1f2;
-      border:1px solid #fecaca;
-      border-radius:12px;
-      box-shadow:0 8px 16px rgba(0,0,0,.05);
-    }
-    .icon{font-size:80px;margin-bottom:1rem;}
-    h1{font-size:2.5rem;margin-bottom:.75rem;}
-    p{font-size:1.1rem;color:#7f1d1d;}
-    .ip-box{margin-top:1.5rem;padding:.75rem 1rem;background:#fee2e2;border-radius:6px;font-family:monospace;display:inline-block;}
-    #map{width:100%;height:60vh;max-width:800px;border:1px solid #fecaca;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.05);}  
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⚠ Security Alert – Access Restricted</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+  * {margin:0; padding:0; box-sizing:border-box;}
+  body{
+    font-family: 'Inter', sans-serif;
+    background: #1f1f23;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .warning-container{
+    background: linear-gradient(135deg, #ff4d4f, #ff7875);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+    50% { box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+  }
+
+  .warning-header{
+    display:flex;
+    align-items:center;
+    gap:1rem;
+  }
+  .warning-icon{
+    font-size: 60px;
+  }
+  .warning-title{
+    font-size: 2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .warning-text{
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #fff8f0;
+  }
+
+  .ip-card, .device-card{
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: monospace;
+    color: #ffe;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  #map{
+    width: 100%;
+    height: 40vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .device-card{
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+
+  @media(max-width:768px){
+    .warning-header { flex-direction: column; text-align:center;}
+  }
+</style>
 </head>
 <body>
-  <section class="notice">
-    <div class="icon">☣️</div>
-    <h1>Access Blocked</h1>
-    <p>
-      Harmful malware or virus activity has been detected originating from your IP address.<br>
-      For your safety and the security of our network, access has been denied.
-    </p>
-    <div class="ip-box" id="ip">Detecting IP…</div>
-  </section>
+
+<div class="warning-container">
+  <div class="warning-header">
+    <div class="warning-icon">⚠️</div>
+    <div class="warning-title">Security Alert</div>
+  </div>
+  <div class="warning-text">
+    Access to this page is restricted.<br>
+    Right-clicking, inspecting, or copying content is disabled.
+  </div>
+
+  <div class="ip-card">
+    <strong>IP Address & Location:</strong>
+    <div id="ip">Detecting IP…</div>
+  </div>
 
   <div id="map">Loading map…</div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const ipBox = document.getElementById('ip');
-    const mapDiv = document.getElementById('map');
+  <div class="device-card">
+    <strong>Device Info:</strong>
+    <div id="device-info">Loading device info…</div>
+  </div>
+</div>
 
-    /**
-     * STEP 1 – Fetch visitor IP & geolocation
-     * Uses ipinfo.io – replace YOUR_TOKEN with your free API token
-     */
-    fetch('https://ipinfo.io/json?token=a56ee20b36425b')
-      .then(res => res.json())
-      .then(data => {
-        const ip = data.ip || 'Unknown IP';
-        ipBox.textContent = 'IP Address: ' + ip;
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// --- Right-click block ---
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  alert('Right-click is disabled on this page!');
+});
 
-        // Extract lat & lon from "loc" (e.g., "37.3860,-122.0840")
-        const [lat, lon] = (data.loc || ',').split(',');
-        if (!lat || !lon) throw new Error('No location');
-
-        // STEP 2 – Build map
-        buildMap(parseFloat(lat), parseFloat(lon), data);
-      })
-      .catch(err => {
-        console.error('Location fetch error', err);
-        ipBox.textContent = 'Unable to retrieve IP/location.';
-        mapDiv.textContent = '';
-      });
-
-    function buildMap(lat, lon, data){
-      mapDiv.textContent=''; // clear loader text
-      const map = L.map('map').setView([lat, lon], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom:18,
-        attribution:'&copy; OpenStreetMap contributors'
-      }).addTo(map);
-
-      L.marker([lat, lon]).addTo(map)
-        .bindPopup(`Your approximate location:<br>${data.city || ''}, ${data.region || ''}`)
-        .openPopup();
+// --- IP + Map ---
+const ipBox = document.getElementById('ip');
+const mapDiv = document.getElementById('map');
+fetch('https://ipinfo.io/json?token=a56ee20b36425b')
+  .then(r => r.json())
+  .then(data => {
+    const ip = data.ip || 'Unknown';
+    ipBox.textContent = `${ip} — ${data.city||'Unknown City'}, ${data.region||'Unknown Region'}, ${data.country||''}`;
+    const [lat, lon] = (data.loc||',').split(',');
+    if(lat && lon){
+      const map = L.map('map').setView([parseFloat(lat),parseFloat(lon)], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:18 }).addTo(map);
+      L.marker([lat, lon]).addTo(map).bindPopup(`Approx. location`).openPopup();
+    } else {
+      mapDiv.textContent = 'Location not available';
     }
-  </script>
+  })
+  .catch(err => { ipBox.textContent='Unable to retrieve IP/location.'; mapDiv.textContent=''; });
+
+// --- Device Info ---
+function getDeviceInfo(){
+  const nav = navigator;
+  const info = {
+    'User-Agent': nav.userAgent,
+    'Platform': nav.platform,
+    'Languages': (nav.languages||[]).join(', '),
+    'Screen': `${screen.width}x${screen.height}`,
+    'Viewport': `${window.innerWidth}x${window.innerHeight}`,
+    'Color Depth': screen.colorDepth,
+    'Device Memory (GB)': nav.deviceMemory||'—',
+    'CPU cores': nav.hardwareConcurrency||'—',
+    'Online': nav.onLine,
+    'Cookies Enabled': nav.cookieEnabled,
+    'Touch Support': navigator.maxTouchPoints||0
+  };
+  let html = '<dl style="margin:0;">';
+  for(const k in info){
+    html += `<dt style="font-weight:600;">${k}</dt><dd>${info[k]}</dd>`;
+  }
+  html += '</dl>';
+  document.getElementById('device-info').innerHTML = html;
+}
+getDeviceInfo();
+window.addEventListener('resize', getDeviceInfo);
+window.addEventListener('online', getDeviceInfo);
+window.addEventListener('offline', getDeviceInfo);
+</script>
+
 </body>
 </html>
